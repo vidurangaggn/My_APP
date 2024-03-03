@@ -92,6 +92,12 @@ class _LoginViewState extends State<LoginView> {
                 ),
                 
                 ),
+                TextButton(onPressed:(){
+                  Navigator.of(context).restorablePushNamedAndRemoveUntil('/register', (route) => false);
+                       
+                }, 
+                child: const Text('Register') ),
+
               ],
             );
         
