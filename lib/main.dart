@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_application_7/constants/routes.dart';
 import 'package:flutter_application_7/views/login_view.dart';
 import 'package:flutter_application_7/views/register_view.dart';
 import 'firebase_options.dart';
@@ -40,9 +41,10 @@ class MyApp extends StatelessWidget {
       //home: const RegisterView(),
       home: const HomePage(),
       routes: {
-        '/login': (context) => const LoginView(),
-        '/register': (context) => const RegisterView(),
-
+        loginRoute: (context) => const LoginView(),
+        registerRoute: (context) => const RegisterView(),
+        notesRoute: (context) => const NotesView(),
+        
       },
 
     ); 
@@ -55,9 +57,9 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Home'),
-      ), 
+      // appBar: AppBar(
+      //   title: const Text('Home'),
+      // ), 
       body: FutureBuilder(
         future: Firebase.initializeApp(
           options: DefaultFirebaseOptions.currentPlatform,
@@ -67,11 +69,12 @@ class HomePage extends StatelessWidget {
             case ConnectionState.done:
               final user = FirebaseAuth.instance.currentUser;
               if(user!=null) {
-                if (user?.emailVerified ?? false) {
-                print("You Are verifed!");
-                return const Text("Done");
+                print(user);
+                if (user.emailVerified) {
+                  return const NotesView();
                 } else {
-                  return const VerifyEmailView();
+                  return const NotesView();
+                  //return const VerifyEmailView();
                 }
               }else{
                 return const LoginView();
@@ -108,4 +111,71 @@ class _VerifyEmailViewState extends State<VerifyEmailView> {
         ],
       );
   }
+}
+
+class NotesView extends StatefulWidget {
+  const NotesView({super.key});
+
+  @override
+  State<NotesView> createState() => _NotesViewState();
+}
+
+enum MenuAction { logout }
+class _NotesViewState extends State<NotesView> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Notes'),
+        actions: [
+          PopupMenuButton<MenuAction>(onSelected: (value) {
+            switch(value){
+              case MenuAction.logout:
+                signOutDialog(context).then((value){
+                  if(value){
+                    FirebaseAuth.instance.signOut();
+                    Navigator.of(context).pushReplacementNamed('/login');
+                  }
+                });
+                break;
+            }
+
+
+          },itemBuilder: (context) {
+             return [
+              const PopupMenuItem<MenuAction>(
+              child: Text("Log out"),
+              value: MenuAction.logout,
+              )
+
+             ];
+          },
+          
+          )
+        ],
+      ),
+      body: const Center(
+        child: Text('Notes'),
+      ),
+    );
+  }
+}
+
+Future<bool> signOutDialog(BuildContext context) {
+ return showDialog<bool>(context: context, 
+  builder:(context){
+    return AlertDialog(
+      title: const Text('Log out'),
+      content: const Text('Are you sure you want to log out?'),
+      actions: [
+        TextButton(onPressed: (){
+          Navigator.pop(context, false);
+        }, child: const Text('Cancel')),
+        TextButton(onPressed: (){
+          Navigator.pop(context, true);
+        }, child: const Text('Log out'))
+      ],
+    );
+  }
+  ).then((value) => value ?? false);
 }
